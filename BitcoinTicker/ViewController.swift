@@ -13,6 +13,7 @@ class ViewController: UIViewController, UIPickerViewDelegate, UIPickerViewDataSo
     let baseURL = "https://apiv2.bitcoinaverage.com/indices/global/ticker/BTC"
     let currencyArray = ["AUD", "BRL","CAD","CNY","EUR","GBP","HKD","IDR","ILS","INR","JPY","MXN","NOK","NZD","PLN","RON","RUB","SEK","SGD","USD","ZAR"]
     var finalURL = ""
+    var selectCurrency = ""
 
     //Pre-setup IBOutlets
     @IBOutlet weak var bitcoinPriceLabel: UILabel!
@@ -44,6 +45,10 @@ class ViewController: UIViewController, UIPickerViewDelegate, UIPickerViewDataSo
         return currencyArray[row]
     }
     
+    func pickerView(_ pickerView: UIPickerView, didSelectRow row: Int, inComponent component: Int) {
+        selectCurrency = currencyArray[row]
+        getCurrency()
+    }
     
     
     
@@ -52,7 +57,8 @@ class ViewController: UIViewController, UIPickerViewDelegate, UIPickerViewDataSo
 //    /***************************************************************/
 //    
         func getCurrency() {
-              guard let url = URL(string: "") else {
+            finalURL = baseURL + selectCurrency
+              guard let url = URL(string: finalURL) else {
                   print ("No hay url")
                   return
               }
@@ -60,15 +66,21 @@ class ViewController: UIViewController, UIPickerViewDelegate, UIPickerViewDataSo
               //set up the session
             let config = URLSessionConfiguration.default
             let session = URLSession(configuration: config)
-              //make the request
-                    let task = session.dataTask(with: urlRequest) { (data, response, error) in
-                        guard error == nil else {
-                        print(error)
-                        return
-                    }
-                        guard let responseData = data else {
-                        return
-                    }
+            // make the request
+            let task = session.dataTask(with: urlRequest) {
+                (data, response, error) in
+                // check for any errors
+                guard error == nil else {
+                    print("error calling GET on /todos/1")
+                    print(error!)
+                    return
+                }
+                // make sure we got data
+                guard let responseData = data else {
+                    print("Error: did not receive data")
+                    return
+                }
+                        print(responseData)
                     // parse the result as JSON, since that's what the API provides
                     do {
                         guard let todo = try JSONSerialization.jsonObject(with: responseData, options: [])
@@ -82,19 +94,21 @@ class ViewController: UIViewController, UIPickerViewDelegate, UIPickerViewDataSo
                         // the todo object is a dictionary
                         // so we just access the title using the "title" key
                         // so check for a title and print it if we have one
-                        guard let todoTitle = todo["title"] as? String else {
-                            print("Could not get todo title from JSON")
+                        guard let todoTitle = todo["bid"] else {
+                            print("Could not get todo bid from JSON")
                             return
                         }
-                            print("The title is: " + todoTitle)
-                        } catch  {
-                            print("error trying to convert data to JSON")
-                            return
+                        let s = String(describing: todoTitle)
+                        
+                        DispatchQueue.main.async {
+                            self.bitcoinPriceLabel.text = s
                         }
+                    } catch {
+                        return
                     }
-                task.resume()
+            }
+            task.resume()
+
     }
 
-
 }
-
